@@ -1,23 +1,28 @@
+#include "stdafx.h"
 #include "ListWatcher.h"
+
 
 ListWatcher::ListWatcher()
 {
+	
 	if(!EnumWindows(addApp, 0)){
-		//eccezioni
+		throw ListException(GetLastError(), "Enum failed");
 	}
-	focus = GetForegroundWindow();
-	if (focus ==NULL){
-		//eccezioni
+	HWND wnd = GetForegroundWindow();
+	if (wnd ==NULL){
+		throw ListException(GetLastError(), "Error while detecting focus owner");
 	}
-}
-
-std::list<AppInfo> ListWatcher::getList()
-{
-	return list;
+	GetWindowThreadProcessId(wnd, &focus);
 }
 
 BOOL CALLBACK addApp(HWND wnd, LPARAM param)
 {
-	ListWatcher::list.push_back(std::move(AppInfo(wnd)));
-	return true;
+	try{
+		applist.push_back(std::move(AppInfo(wnd)));
+		return true;
+	}
+	catch(WindowInfoException e){
+			SetLastError(e.getErr());
+			return false;
+	}
 }

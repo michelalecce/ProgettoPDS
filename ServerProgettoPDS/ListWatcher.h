@@ -2,11 +2,13 @@
 #include <list>
 #include "AppInfo.h"
 #include <windows.h>
+#include "Errors.cpp"
+
+extern std::list<AppInfo> applist;
 
 class ListWatcher {
 private:
-	static std::list<AppInfo> list;
-	HWND focus;
+	DWORD focus;
 public:
 	ListWatcher ();
 	std::list<AppInfo> getList();

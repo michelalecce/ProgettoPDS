@@ -1,21 +1,20 @@
 #pragma once
-#include <stdexcept>
+#include "stdafx.h"
 #include <windows.h>
+#include <stdexcept>
 
-class WindowInfoException : std::exception {
-protected:
-	DWORD err;
+class WindowInfoException: public std::runtime_error {
+private:
+	DWORD error;
 public:
-	WindowInfoException(DWORD err) :err(err) {
-	}
-	DWORD getErrCode() { return err; }
+	WindowInfoException(DWORD err, std::string msg): std::runtime_error(msg), error(err){}
+	DWORD getErr(void){ return error; }
 };
 
-class ListException : std::exception {
-protected:
-	DWORD err;
+class ListException: public std::runtime_error {
+private:
+	DWORD error;
 public:
-	ListException(DWORD err) :err(err) {
-	}
-	DWORD getErrCode() { return err; }
+	ListException(DWORD err, std::string msg) : std::runtime_error(msg), error(err) {}
+	DWORD getErr(void) { return error; }
 };
