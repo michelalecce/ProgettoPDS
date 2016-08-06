@@ -1,0 +1,4 @@
+TaskManagerClient:
+1) Anche il server deve ricevere err: se manda un focus errato il client risponde con err 
+2) Cosa fa il client quando riceve err? 
+
