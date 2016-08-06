@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskManagerClient", "TaskManagerClient\TaskManagerClient.csproj", "{A16A2041-442D-43AE-B06B-B47832DF62FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A16A2041-442D-43AE-B06B-B47832DF62FE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A16A2041-442D-43AE-B06B-B47832DF62FE}.Debug|x86.Build.0 = Debug|Any CPU
+		{A16A2041-442D-43AE-B06B-B47832DF62FE}.Release|x86.ActiveCfg = Release|Any CPU
+		{A16A2041-442D-43AE-B06B-B47832DF62FE}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

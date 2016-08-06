@@ -1,0 +1,6 @@
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\bin\Debug\TaskManagerClient.exe.config
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\obj\Debug\TaskManagerClient.csprojResolveAssemblyReference.cache
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\obj\Debug\MainWindow.g.cs
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\obj\Debug\App.g.cs
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\obj\Debug\TaskManagerClient_MarkupCompile.cache
+c:\users\michela\documents\visual studio 2015\Projects\TaskManagerClient\TaskManagerClient\obj\Debug\TaskManagerClient_MarkupCompile.lref
