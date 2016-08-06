@@ -1,0 +1,6 @@
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\bin\Debug\ClientProva.exe.config
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\bin\Debug\ClientProva.exe
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\bin\Debug\ClientProva.pdb
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\obj\Debug\ClientProva.csprojResolveAssemblyReference.cache
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\obj\Debug\ClientProva.exe
+c:\users\michela\documents\visual studio 2015\Projects\ClientProva\ClientProva\obj\Debug\ClientProva.pdb
