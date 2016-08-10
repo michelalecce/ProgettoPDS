@@ -11,8 +11,13 @@ private:
 	DWORD namesize;
 	HWND wnd;
 	DWORD pid;
+	DWORD iconsize;
 public:
+	AppInfo();
 	AppInfo(HWND wnd);
+	DWORD getPid();
+	DWORD getNameSize();
+	TCHAR* getName();
 	~AppInfo();
 };
 

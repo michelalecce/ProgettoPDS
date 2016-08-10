@@ -30,6 +30,9 @@
     <ClInclude Include="AppInfo.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="Sockwrap.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -45,6 +48,9 @@
       <Filter>File di origine</Filter>
     </ClCompile>
     <ClCompile Include="AppInfo.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="Sockwrap.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
   </ItemGroup>

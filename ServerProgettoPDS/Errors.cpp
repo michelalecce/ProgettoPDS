@@ -6,6 +6,7 @@
 class WindowInfoException: public std::runtime_error {
 private:
 	DWORD error;
+	HANDLE hproc;
 public:
 	WindowInfoException(DWORD err, std::string msg): std::runtime_error(msg), error(err){}
 	DWORD getErr(void){ return error; }

@@ -1,4 +1,5 @@
 ﻿  stdafx.cpp
+  Sockwrap.cpp
   ServerProgettoPDS.cpp
   ListWatcher.cpp
   Errors.cpp
