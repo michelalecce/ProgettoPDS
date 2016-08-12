@@ -19,3 +19,9 @@ public:
 	ListException(DWORD err, std::string msg) : std::runtime_error(msg), error(err) {}
 	DWORD getErr(void) { return error; }
 };
+/*
+class IconException: public std::runtime_error{
+public:	
+	IconException(std::string msg):std::runtime_error(msg){}
+};
+*/

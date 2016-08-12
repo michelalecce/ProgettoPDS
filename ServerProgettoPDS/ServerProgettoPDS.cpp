@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 	WSAStartup(wVersionRequested, &wsaData);
 	struct sockaddr_in local, client;
 	int client_len;
-
+	// socket creation and preparation
 	s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (s == INVALID_SOCKET) {
 		err = WSAGetLastError();
@@ -67,12 +67,15 @@ int main(int argc, char** argv)
 				closesocket(conn_sock);
 				continue;
 			}
+			//once we have a client connected we initialize the watcher to create and send the list of application
 			std::cout << argv[0] << "-Connection established"<< std::endl;
 			lw.init();
 			lw.sendList(conn_sock);
+			//at the end we clear the list, it will be created again with the next connection
 			lw.clearList();
 		}
 		catch(ListException e){
+			//we have only the socket to release at this moment
 			std::cout << e.what() <<"\nerrno = " << e.getErr() << "\t" ;
 			strerror_s(errbuf, ERRBUFF, e.getErr());
 			printf("%s\n", errbuf);
@@ -80,6 +83,7 @@ int main(int argc, char** argv)
 			lw.clearList();
 		}
 		catch (WindowInfoException e) {
+			//we have only the socket to release at this moment
 			std::cout << e.what() << "\nerrno = " << e.getErr() << "\t";
 			strerror_s(errbuf, ERRBUFF, e.getErr());
 			printf("%s\n", errbuf);
@@ -125,7 +129,7 @@ BOOL IsAltTabWindow(HWND hwnd)
 
 
 BOOL CALLBACK enumProc(HWND wnd, LPARAM param) {
-	if (!IsAltTabWindow(wnd))
-		return true;
+	if (!IsAltTabWindow(wnd)) //STACKOVERFLOW FUNCTION: returns true if wnd appears when alt-tabbing
+		return true; //if it's not a window visible alt-tabbing we skip the wnd, so we go on with the enumeration 
 	return lw.addApp(wnd, param);
 }

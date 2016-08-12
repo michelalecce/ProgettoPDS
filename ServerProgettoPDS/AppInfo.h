@@ -3,21 +3,24 @@
 #include <windows.h>
 #include <string>
 
-#define MAXPATHSIZE 100
+#define ERRBUFF 80
 
 class AppInfo{
 private:
-	TCHAR name[MAXPATHSIZE];
+	TCHAR name[MAX_PATH];
 	DWORD namesize;
 	HWND wnd;
 	DWORD pid;
-	DWORD iconsize;
+	LONG iconFileSize;
+	TCHAR iconFile[MAX_PATH];
 public:
 	AppInfo();
 	AppInfo(HWND wnd);
 	DWORD getPid();
 	DWORD getNameSize();
 	TCHAR* getName();
+	void retrieveIcon(); 
+	void cleanIcon();
 	~AppInfo();
 };
 

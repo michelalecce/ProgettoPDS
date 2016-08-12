@@ -11,7 +11,7 @@ void ListWatcher::init()
 {
 	int attempts=4;
 	HWND wnd=NULL;
-	if(!EnumWindows(enumProc, 0)){
+	if(!EnumWindows(enumProc, 0)){ //for every top-level window it calls enumProc
 		throw ListException(GetLastError(), "Enum failed");
 	}
 	while (attempts!=0){
@@ -19,7 +19,7 @@ void ListWatcher::init()
 		if (wnd!=NULL){
 			break;
 		}
-		attempts--;
+		attempts--; //we do some attempts because sometimes if focus is changing GetForegroundWindow() can fail
 	}
 	if (wnd ==NULL){
 		throw ListException(GetLastError(), "Error while detecting focus owner");
@@ -44,6 +44,7 @@ BOOL ListWatcher::addApp(HWND wnd, LPARAM param)
 
 void ListWatcher::clearList()
 {
+	for (std::list<AppInfo>::iterator ai = applist.begin(); ai != applist.end(); ai++) ai->cleanIcon(); //eliminates the iconfile for the apps in the list
 	applist.clear();
 }
 
@@ -55,25 +56,26 @@ void ListWatcher::sendList(SOCKET sock) {
 	int n = COMMSIZE * sizeof(TCHAR) + sizeof(uint32_t);
 	std::cout << "Application list: (n=" << applist.size()<< ")" << std::endl;
 	for (std::list<AppInfo>::iterator ai = applist.begin(); ai!= applist.end(); ai++) {
+		//before we push something into the buffer we check if it fits, if not we send before pushing
 		if (n + sizeof(DWORD) > BUFF) {
 			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
-		ptr = (void *)((unsigned long)buffer + n);	*((DWORD *)ptr) = htonl(ai->getPid()); n += sizeof(DWORD);
+		ptr = (void *)((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getPid()); n += sizeof(DWORD);
 		if (n + sizeof(DWORD) > BUFF) {
 			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
 		std::cout <<"pid: "<< ai->getPid();
-		ptr = (void *)((unsigned long)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
+		ptr = (void *)((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
 		if (n + ai->getNameSize() * sizeof(TCHAR) > BUFF) {
 			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
-		ptr = (void *)((unsigned long)buffer + n);	_tcscpy_s((TCHAR *)ptr, ai->getNameSize() + 1, ai->getName());
+		ptr = (void *)( (char *)buffer + n);	_tcscpy_s((TCHAR *)ptr, ai->getNameSize() + 1, ai->getName());
 		n += ai->getNameSize() * sizeof(TCHAR);
 		_tprintf(_T("name: %s size:%d\n"), ai->getName(), ai->getNameSize());
-		//manca l'icona
+		//ICOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOON MISSSSSSSSSSSSSSSSSSSSSSSSSSSSIIIIIIIIIIIIIIIIIIIIIIIINNNNNNNNNNNGGGGGGGGG
 	}
 	if (n!=0)
 		Lsendn(sock, (char *)buffer, n, 0);
@@ -91,5 +93,5 @@ void ListWatcher::sendFocus(SOCKET sock){
 	_stprintf_s(buffer, BUFF, TEXT("foc"));
 	int n = COMMSIZE * sizeof(TCHAR) + sizeof(uint32_t);
 	*((DWORD *)(buffer + n)) = htonl(focus); n += sizeof(DWORD);
-	//send
+	//send MIIIIIIIIIIIIIIIIIIIIIIIIISSSSSSSSSSSSSSSSSSSSSSSSIIIIIIIIIIIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNGGGGGGGGGGGGGGGGGG
 }
