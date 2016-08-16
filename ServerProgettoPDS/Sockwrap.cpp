@@ -26,3 +26,16 @@ void Lsendn(SOCKET s, char * buffer, int len, int flags){
 	if (sendn(s, buffer, len, flags) != len)
 		throw ListException(WSAGetLastError(), "Error while sending info through the socket");
 }
+
+void Isendn(SOCKET s, char * buffer, int len, int flags)
+{
+	if (sendn(s, buffer, len, flags) != len)
+		throw IconSendException(WSAGetLastError(), "Error while sending icon through the socket");
+}
+
+
+void Fsendn(SOCKET s, char * buffer, int len, int flags)
+{
+	if (sendn(s, buffer, len, flags) != len)
+		throw FocusSendException(WSAGetLastError(), "Error while sending focus through the socket");
+}

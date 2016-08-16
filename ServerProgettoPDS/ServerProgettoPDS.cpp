@@ -73,6 +73,7 @@ int main(int argc, char** argv)
 			lw.sendList(conn_sock);
 			//at the end we clear the list, it will be created again with the next connection
 			lw.clearList();
+			getchar(); // solo per fermare il DEBUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 		}
 		catch(ListException e){
 			//we have only the socket to release at this moment

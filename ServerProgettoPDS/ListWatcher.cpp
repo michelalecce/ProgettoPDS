@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "ListWatcher.h"
 #include <iostream>
+#include <fstream>
+#include "string.h"
+#define TYP_INIT 0 
+#define TYP_SMLE 1 
+#define TYP_BIGE 2
 
 
 ListWatcher::ListWatcher()
@@ -24,7 +29,8 @@ void ListWatcher::init()
 	if (wnd ==NULL){
 		throw ListException(GetLastError(), "Error while detecting focus owner");
 	}
-	GetWindowThreadProcessId(wnd, &focus);
+	//GetWindowThreadProcessId(wnd, &focus);
+	focus=wnd;
 }
 
 BOOL ListWatcher::addApp(HWND wnd, LPARAM param)
@@ -44,54 +50,104 @@ BOOL ListWatcher::addApp(HWND wnd, LPARAM param)
 
 void ListWatcher::clearList()
 {
-	for (std::list<AppInfo>::iterator ai = applist.begin(); ai != applist.end(); ai++) ai->cleanIcon(); //eliminates the iconfile for the apps in the list
+	//for (std::list<AppInfo>::iterator ai = applist.begin(); ai != applist.end(); ai++) ai->cleanIcon(); //eliminates the iconfile for the apps in the list
+	//OOOOOOOOOOOOOOOOOOOOOOCCCCCCCCCCCCCCCCCCCCCHHHHHHHHHHHHHHHHHHHHHHHHHIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOO QUAAAAAAAAAAAAAAAAAAAAAA
 	applist.clear();
 }
 
 void ListWatcher::sendList(SOCKET sock) {
-	TCHAR buffer[MAXBUFF];
-	void *ptr;
-	_stprintf_s(buffer, BUFF, TEXT("lis"));
+	char buffer[BUFF];
+	char *ptr;
+	sprintf_s(buffer, BUFF, "lis");
 	*((uint32_t *)(buffer + COMMSIZE)) = htonl(applist.size());
-	int n = COMMSIZE * sizeof(TCHAR) + sizeof(uint32_t);
+	int n = COMMSIZE * sizeof(char) + sizeof(uint32_t);
 	std::cout << "Application list: (n=" << applist.size()<< ")" << std::endl;
 	for (std::list<AppInfo>::iterator ai = applist.begin(); ai!= applist.end(); ai++) {
-		//before we push something into the buffer we check if it fits, if not we send before pushing
-		if (n + sizeof(DWORD) > BUFF) {
-			Lsendn(sock, (char *)buffer, n, 0);
-			n = 0;
-		}
-		ptr = (void *)((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getPid()); n += sizeof(DWORD);
-		if (n + sizeof(DWORD) > BUFF) {
-			Lsendn(sock, (char *)buffer, n, 0);
-			n = 0;
-		}
-		std::cout <<"pid: "<< ai->getPid();
-		ptr = (void *)((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
-		if (n + ai->getNameSize() * sizeof(TCHAR) > BUFF) {
-			Lsendn(sock, (char *)buffer, n, 0);
-			n = 0;
-		}
-		ptr = (void *)( (char *)buffer + n);	_tcscpy_s((TCHAR *)ptr, ai->getNameSize() + 1, ai->getName());
-		n += ai->getNameSize() * sizeof(TCHAR);
-		_tprintf(_T("name: %s size:%d\n"), ai->getName(), ai->getNameSize());
-		//ICOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOON MISSSSSSSSSSSSSSSSSSSSSSSSSSSSIIIIIIIIIIIIIIIIIIIIIIIINNNNNNNNNNNGGGGGGGGG
-	}
-	if (n!=0)
+		
+		ptr = ((char *)buffer + n);	
+		pushHandle(ptr, ai->getWindow()); n += sizeof(uint64_t);
+		std::cout <<"pid: "<< ai->getPid() << " handle: "<< ai->getWindow();
+		
+		ptr = ((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
+		strcpy_s(buffer + n, BUFF - n, ai->getNameA());
+		n += ai->getNameSize() * sizeof(char);
+		//_tprintf(_TEXT("name: %s"), ai->getName());
+		printf(" nameA:%s size:%d iconsize:%d\n", ai->getNameA(), ai->getNameSize(), ai->getIconFileSize());
 		Lsendn(sock, (char *)buffer, n, 0);
+		try{
+			sendIcon(sock,ai->getIconFile(), ai->getIconFileSize());
+		}
+		catch(IconSendException e){
+			throw ListException(e.getErr(), e.what());
+		}
+		n=0;
+	}
+
 	//send focus for the first time
-	_stprintf_s(buffer, BUFF, TEXT("foc"));
-	n = COMMSIZE * sizeof(TCHAR);
-	*((DWORD *)(buffer + COMMSIZE)) = htonl(focus); n += sizeof(DWORD);
+	sprintf_s(buffer, BUFF, "foc");
+	n = COMMSIZE * sizeof(char);
+	pushHandle(buffer + n, focus); n += sizeof(uint64_t);
 	Lsendn(sock, (char *)buffer, n, 0);
 	std::cout <<"Focus:" << focus << std::endl;
 }
 
-void ListWatcher::sendFocus(SOCKET sock){
-	TCHAR buffer[BUFF];
 
-	_stprintf_s(buffer, BUFF, TEXT("foc"));
-	int n = COMMSIZE * sizeof(TCHAR) + sizeof(uint32_t);
-	*((DWORD *)(buffer + n)) = htonl(focus); n += sizeof(DWORD);
-	//send MIIIIIIIIIIIIIIIIIIIIIIIIISSSSSSSSSSSSSSSSSSSSSSSSIIIIIIIIIIIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNGGGGGGGGGGGGGGGGGG
+unsigned long long htonll(unsigned long long src) { // HTONL 64 BIT VERSION
+	static int typ = TYP_INIT;
+	unsigned char c;
+	union {
+		unsigned long long ull;
+		unsigned char c[8];
+	} x;
+	if (typ == TYP_INIT) {
+		x.ull = 0x01;
+		typ = (x.c[7] == 0x01ULL) ? TYP_BIGE : TYP_SMLE;
+	}
+	if (typ == TYP_BIGE)
+		return src;
+	x.ull = src;
+	c = x.c[0]; x.c[0] = x.c[7]; x.c[7] = c;
+	c = x.c[1]; x.c[1] = x.c[6]; x.c[6] = c;
+	c = x.c[2]; x.c[2] = x.c[5]; x.c[5] = c;
+	c = x.c[3]; x.c[3] = x.c[4]; x.c[4] = c;
+	return x.ull;
+}
+
+void pushHandle(char * buffer, HWND h){
+	uint64_t longnum;
+	//I PUT THE HANDLE ON 64 BIT BECAUSE IT'S A POINTER IN TRUTH. TO MAKE THE CODE PORTABLE 64 BIT IS THE SAFEST CHOICE FOR INTEGER
+	if (sizeof(h) == 4) {
+		longnum = (uint32_t)h;
+	}
+	else if (sizeof(h) == 8) {
+		longnum = (uint64_t)h;
+	}
+	*((uint64_t *)buffer) = htonll(longnum);
+}
+
+void ListWatcher::sendFocus(SOCKET sock){
+	char buffer[BUFF];
+	uint64_t longnum;
+	sprintf_s(buffer, BUFF, "foc");
+	int n = COMMSIZE * sizeof(char);
+	pushHandle(buffer + n, focus); n+= sizeof(uint64_t);
+	Fsendn(sock, buffer, n, 0);
+}
+
+void sendIcon(SOCKET sock, TCHAR *file, LONG size)
+{
+	char buffer[BUFF];
+	void *ptr;
+	int n=0;
+	if(size==0){
+		*((LONG *) buffer) = htonl(0);
+		Isendn(sock, buffer, sizeof(LONG),0);
+	}
+	else{
+		*((LONG *)buffer) = htonl(size); n= sizeof(LONG);
+		std::ifstream fin(file);
+
+		fin.read((buffer + n), size); n+=size;
+		Isendn(sock,buffer,n,0);
+	}
 }

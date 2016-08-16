@@ -8,6 +8,7 @@
 class AppInfo{
 private:
 	TCHAR name[MAX_PATH];
+	char nameA[MAX_PATH];
 	DWORD namesize;
 	HWND wnd;
 	DWORD pid;
@@ -19,8 +20,12 @@ public:
 	DWORD getPid();
 	DWORD getNameSize();
 	TCHAR* getName();
+	char* getNameA();
+	HWND getWindow();
 	void retrieveIcon(); 
 	void cleanIcon();
+	TCHAR *getIconFile();
+	LONG getIconFileSize();
 	~AppInfo();
 };
 

@@ -14,3 +14,5 @@
 #include "Errors.cpp"
 
 void Lsendn(SOCKET , char*, int, int);
+void Isendn(SOCKET, char*, int, int);
+void Fsendn(SOCKET, char*, int, int);

@@ -24,8 +24,10 @@ AppInfo::AppInfo(HWND wnd):wnd(wnd){
 	if(namesize==0){
 		throw WindowInfoException(GetLastError(), "Problems with process name");
 	}
-	else{
-		name[namesize] = (TCHAR)'\0';
+	//we do the same for the char version of the name, we need it for the socket... tchar was hard to receive on the client
+	namesize = GetModuleFileNameExA(hproc, NULL, nameA, MAX_PATH - 1); //retrieve the name of the process, we need the handle to do this
+	if (namesize == 0) {
+		throw WindowInfoException(GetLastError(), "Problems with process nameA");
 	}
 	//we retrieve the icon
 	retrieveIcon();
@@ -47,6 +49,16 @@ TCHAR * AppInfo::getName()
 	return (TCHAR *)name;
 }
 
+char * AppInfo::getNameA()
+{
+	return nameA;
+}
+
+HWND AppInfo::getWindow()
+{
+	return wnd;
+}
+
 AppInfo::~AppInfo(){
 }
 
@@ -54,7 +66,7 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	SHFILEINFO info;
 	if(SHGetFileInfo(name, 0, &info, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_LARGEICON)==0){
 		int err = GetLastError();
-		std::cout << "Error while retrieving info for icon errno= " << err << "\tpid:" << pid << std::endl;
+		std::cout << "Error while retrieving info for icon errno= " << err << "\tpid:" << pid << "\t handle:"<< wnd << std::endl;
 		char errbuf[ERRBUFF];
 		strerror_s(errbuf, ERRBUFF, err);
 		printf("%s\n", errbuf);
@@ -67,7 +79,7 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	IPicture* pPicture = 0;
 	HRESULT hr = OleCreatePictureIndirect(&desc, IID_IPicture, FALSE, (void**)&pPicture);
 	if (FAILED(hr)){
-		std::cout << "Error retrieving icon for pid:" << std::to_string(pid) << std::endl;
+		std::cout << "Error retrieving icon for pid:" << pid << "\t handle:" << wnd << std::endl;
 		iconFileSize = 0;
 		return;
 	}
@@ -80,7 +92,7 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	
 	if (FAILED(hr)) {
 		pPicture->Release();
-		std::cout << "Error retrieving icon for pid:" << std::to_string(pid) << std::endl;
+		std::cout << "Error retrieving icon for pid:" << pid << "\t handle:" << wnd << std::endl;
 		iconFileSize = 0;
 		return;
 	}
@@ -89,7 +101,7 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 		HGLOBAL hBuf = 0;
 		GetHGlobalFromStream(pStream, &hBuf);
 		void* buffer = GlobalLock(hBuf);
-		_stprintf_s(iconFile, MAX_PATH,TEXT("%d.ico"), pid);
+		_stprintf_s(iconFile, MAX_PATH,TEXT("%x.ico"), wnd);
 		HANDLE hFile = CreateFile(iconFile, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
 		if (!hFile) hr = HRESULT_FROM_WIN32(GetLastError());
 		else {
@@ -107,4 +119,14 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 
 void AppInfo::cleanIcon(){
 	DeleteFile(iconFile);
+}
+
+TCHAR * AppInfo::getIconFile()
+{
+	return iconFile;
+}
+
+LONG AppInfo::getIconFileSize()
+{
+	return iconFileSize;
 }
