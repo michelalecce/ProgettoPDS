@@ -1,3 +1,12 @@
-﻿  ServerProgettoPDS.cpp
+﻿  stdafx.cpp
+  Sockwrap.cpp
+  ServerProgettoPDS.cpp
+  ListWatcher.cpp
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(232): warning C4101: 'longnum': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(242): warning C4101: 'ptr': variabile locale senza riferimenti
+  Errors.cpp
+  AppInfo.cpp
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\appinfo.cpp(105): warning C4477: 'swprintf_s': con la stringa di formato '%x' è necessario un argomento di tipo 'unsigned int', ma il tipo dell'argomento variadic 1 è 'HWND'
+  Generazione del codice in corso...
   ServerProgettoPDS.vcxproj -> C:\Users\totox\Desktop\ProgettoPDS\ServerProgettoPDS\Debug\ServerProgettoPDS.exe
   ServerProgettoPDS.vcxproj -> C:\Users\totox\Desktop\ProgettoPDS\ServerProgettoPDS\Debug\ServerProgettoPDS.pdb (Full PDB)

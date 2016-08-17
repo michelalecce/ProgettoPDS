@@ -14,6 +14,7 @@ private:
 	DWORD pid;
 	LONG iconFileSize;
 	TCHAR iconFile[MAX_PATH];
+	bool still_open; //while updating the list it is true if it's found open again with a successive call of enumWindows
 public:
 	AppInfo();
 	AppInfo(HWND wnd);
@@ -23,9 +24,14 @@ public:
 	char* getNameA();
 	HWND getWindow();
 	void retrieveIcon(); 
-	void cleanIcon();
+	void deleteIcon();
 	TCHAR *getIconFile();
 	LONG getIconFileSize();
+	void setStillOpen();
+	void clearStillOpen();
+	bool getStillOpen();
 	~AppInfo();
 };
+
+HICON GetHighResolutionIcon(LPTSTR );
 

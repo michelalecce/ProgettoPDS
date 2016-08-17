@@ -11,6 +11,7 @@ AppInfo::AppInfo(){
 	wnd=NULL;
 	pid=0;
 	namesize=0;
+	still_open=false;
 }
 
 AppInfo::AppInfo(HWND wnd):wnd(wnd){
@@ -64,7 +65,7 @@ AppInfo::~AppInfo(){
 
 void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	SHFILEINFO info;
-	if(SHGetFileInfo(name, 0, &info, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_LARGEICON)==0){
+	if(SHGetFileInfo(name, FILE_ATTRIBUTE_NORMAL, &info, sizeof(SHFILEINFO), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX | SHGFI_ICON | SHGFI_LARGEICON)==0){
 		int err = GetLastError();
 		std::cout << "Error while retrieving info for icon errno= " << err << "\tpid:" << pid << "\t handle:"<< wnd << std::endl;
 		char errbuf[ERRBUFF];
@@ -117,7 +118,7 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	pPicture->Release();
 }
 
-void AppInfo::cleanIcon(){
+void AppInfo::deleteIcon(){
 	DeleteFile(iconFile);
 }
 
@@ -129,4 +130,19 @@ TCHAR * AppInfo::getIconFile()
 LONG AppInfo::getIconFileSize()
 {
 	return iconFileSize;
+}
+
+void AppInfo::setStillOpen()
+{
+	still_open = true;
+}
+
+void AppInfo::clearStillOpen()
+{
+	still_open= false;
+}
+
+bool AppInfo::getStillOpen()
+{
+	return still_open;
 }

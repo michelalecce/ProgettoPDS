@@ -13,6 +13,7 @@
 
 ListWatcher lw;
 void sendList(SOCKET);
+void readAndSendCommand(SOCKET);
 
 int main(int argc, char** argv)
 {
@@ -23,6 +24,10 @@ int main(int argc, char** argv)
 	char errbuf[ERRBUFF];
 	SOCKET s, conn_sock;
 	
+	fd_set readset;
+	struct timeval tval;
+	int sel_res;
+
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	WSAStartup(wVersionRequested, &wsaData);
 	struct sockaddr_in local, client;
@@ -71,9 +76,32 @@ int main(int argc, char** argv)
 			std::cout << argv[0] << "-Connection established"<< std::endl;
 			lw.init();
 			lw.sendList(conn_sock);
+			getchar();
+			//after sending the situation at the moment of the connection we start the polling
+			while(1){
+				FD_ZERO(&readset); FD_SET(conn_sock, &readset);
+				sel_res = select(0, &readset, nullptr, nullptr, &tval);
+				if(sel_res==SOCKET_ERROR){
+					strerror_s(errbuf, ERRBUFF, WSAGetLastError());
+					printf("%s\n", errbuf);
+					closesocket(conn_sock);
+					FD_ZERO(&readset);
+					break;
+				}
+				else if(sel_res==0){
+					//the timer set for the polling has expired, we update the situation and send the information to the client
+					lw.updateList(conn_sock);
+					tval.tv_sec = 0; tval.tv_usec = 200;
+				}
+				else{
+					//the socket has a command for the focused application
+					readAndSendCommand(conn_sock);
+				}
+			}
+
+			getchar(); // solo per fermare il DEBUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 			//at the end we clear the list, it will be created again with the next connection
 			lw.clearList();
-			getchar(); // solo per fermare il DEBUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 		}
 		catch(ListException e){
 			//we have only the socket to release at this moment
@@ -133,4 +161,13 @@ BOOL CALLBACK enumProc(HWND wnd, LPARAM param) {
 	if (!IsAltTabWindow(wnd)) //STACKOVERFLOW FUNCTION: returns true if wnd appears when alt-tabbing
 		return true; //if it's not a window visible alt-tabbing we skip the wnd, so we go on with the enumeration 
 	return lw.addApp(wnd, param);
+}
+
+BOOL CALLBACK updateProc(HWND wnd, LPARAM param) {
+	if (!IsAltTabWindow(wnd)) //STACKOVERFLOW FUNCTION: returns true if wnd appears when alt-tabbing
+		return true; //if it's not a window visible alt-tabbing we skip the wnd, so we go on with the enumeration 
+	return lw.checkApp(wnd, param);
+}
+
+void readAndSendCommand(SOCKET sock){
 }
