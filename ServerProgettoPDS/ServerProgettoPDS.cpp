@@ -76,7 +76,6 @@ int main(int argc, char** argv)
 			std::cout << argv[0] << "-Connection established"<< std::endl;
 			lw.init();
 			lw.sendList(conn_sock);
-			getchar();
 			//after sending the situation at the moment of the connection we start the polling
 			while(1){
 				FD_ZERO(&readset); FD_SET(conn_sock, &readset);
@@ -98,8 +97,6 @@ int main(int argc, char** argv)
 					readAndSendCommand(conn_sock);
 				}
 			}
-
-			getchar(); // solo per fermare il DEBUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 			//at the end we clear the list, it will be created again with the next connection
 			lw.clearList();
 		}

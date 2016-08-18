@@ -18,9 +18,10 @@ void ListWatcher::sendUpdate(SOCKET sock)
 		int n = COMMSIZE * sizeof(char) + sizeof(uint32_t);
 		std::cout << "Removed application list: (n=" << removeList.size() << ")" << std::endl;
 		for (auto ai = removeList.begin(); ai != removeList.end(); ai++) {
+			ai->deleteIcon();
 			ptr = ((char *)buffer + n);
 			pushHandle(ptr, ai->getWindow()); n += sizeof(uint64_t);
-			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow();
+			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow() << std::endl;
 			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
@@ -30,7 +31,7 @@ void ListWatcher::sendUpdate(SOCKET sock)
 		sprintf_s(buffer, BUFF, "add");
 		*((uint32_t *)(buffer + COMMSIZE)) = htonl(addList.size());
 		int n = COMMSIZE * sizeof(char) + sizeof(uint32_t);
-		std::cout << "Application list: (n=" << addList.size() << ")" << std::endl;
+		std::cout << "Added application list: (n=" << addList.size() << ")" << std::endl;
 		for (auto ai = addList.begin(); ai != addList.end(); ai++) {
 
 			ptr = ((char *)buffer + n);
@@ -60,7 +61,7 @@ ListWatcher::ListWatcher()
 
 void ListWatcher::init()
 {
-	int attempts=4;
+	int attempts=100;
 	HWND wnd=NULL;
 	if(!EnumWindows(enumProc, 0)){ //for every top-level window it calls enumProc
 		throw ListException(GetLastError(), "Enum failed");
@@ -119,35 +120,47 @@ BOOL ListWatcher::checkApp(HWND wnd, LPARAM param)
 
 void ListWatcher::updateList(SOCKET sock)
 {
-	int attempts=4;
+	static int consecutive_errors=10;
+	char errbuf[ERRBUFF];
+	int err;
+	int attempts=100;
 	if (!EnumWindows(updateProc, 0)) { //for every top-level window it calls updateProc
-		throw ListException(GetLastError(), "Enum failed");
+		err = GetLastError();
+		consecutive_errors--;
+		if(consecutive_errors ==0){
+			throw ListException(err, "EnumWindows failed while updating");
+		}
+		std::cout << "EnumWindows failed while updating\nerrno = " << err << "\t";
+		strerror_s(errbuf, ERRBUFF, err);
+		printf("%s\n", errbuf);
 	}
 	//we fill in the list of windows to remove and removes them from the map
-	for (auto ai = applist.begin(); ai != applist.end(); ai++) {
+	auto elim_iter = applist.begin();
+	for (auto ai = applist.begin(); ai != applist.end();) {
 		if (!ai->second.getStillOpen()) {
 			removeList.push_back(ai->second);
-			applist.erase(ai);
+			elim_iter = ai;
+			ai++;
+			applist.erase(elim_iter);
+		}
+		else{
+			ai++;
 		}
 	}
 	if(addList.size()!=0 || removeList.size()!=0){
 		sendUpdate(sock);
 	}
-	//we take the new focused windows
-	while (attempts != 0) {
-		newFocus = GetForegroundWindow();
-		if (newFocus != NULL) {
-			break;
-		}
-		attempts--; //we do some attempts because sometimes if focus is changing GetForegroundWindow() can fail
-	}
-	if (newFocus == NULL) {
-		throw ListException(GetLastError(), "Error while detecting focus owner");
-	}
-
-	if (newFocus!= focus){
+	//we take the new focused windows and update
+	newFocus = GetForegroundWindow();
+	if (newFocus != NULL && newFocus != focus){
 		focus=newFocus;
 		sendFocus(sock);
+	}
+	//Now we get ready for the successive update
+	addList.clear();
+	removeList.clear();
+	for(auto ai = applist.begin(); ai!= applist.end(); ai++){
+		ai->second.clearStillOpen();
 	}
 }
 
@@ -233,6 +246,7 @@ void ListWatcher::sendFocus(SOCKET sock){
 	sprintf_s(buffer, BUFF, "foc");
 	int n = COMMSIZE * sizeof(char);
 	pushHandle(buffer + n, focus); n+= sizeof(uint64_t);
+	std::cout << "Focus:" << focus << std::endl;
 	Fsendn(sock, buffer, n, 0);
 }
 

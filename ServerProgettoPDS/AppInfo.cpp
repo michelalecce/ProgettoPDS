@@ -18,17 +18,33 @@ AppInfo::AppInfo(HWND wnd):wnd(wnd){
 	HANDLE hproc;
 	GetWindowThreadProcessId(wnd,&pid); //we recover the pid of the process linked to the window
 	if((hproc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid))==NULL){
-		DWORD err = GetLastError();
-		throw WindowInfoException(err, "Error while opening the handle to a process");
+		std::cout << "Error while opening handle to a process"<< std::endl;
+		_stprintf_s(name,MAX_PATH, _TEXT("Process name not retrievable"));
+		sprintf_s(nameA,MAX_PATH ,"Process name not retrievable");
+		namesize = strnlen(nameA, MAX_PATH);
+		iconFileSize=0;
+		return;
 	}
 	namesize = GetModuleFileNameEx(hproc, NULL, name, MAX_PATH - 1); //retrieve the name of the process, we need the handle to do this
 	if(namesize==0){
-		throw WindowInfoException(GetLastError(), "Problems with process name");
+		std::cout << "Error retrieving process name" << std::endl;
+		_stprintf_s(name, MAX_PATH, _TEXT("Process name not retrievable"));
+		sprintf_s(nameA, MAX_PATH, "Process name not retrievable");
+		namesize = strnlen(nameA, MAX_PATH);
+		iconFileSize = 0;
+		CloseHandle(hproc);
+		return;
 	}
 	//we do the same for the char version of the name, we need it for the socket... tchar was hard to receive on the client
 	namesize = GetModuleFileNameExA(hproc, NULL, nameA, MAX_PATH - 1); //retrieve the name of the process, we need the handle to do this
 	if (namesize == 0) {
-		throw WindowInfoException(GetLastError(), "Problems with process nameA");
+		std::cout << "Error retrieving process nameA" << std::endl;
+		_stprintf_s(name, MAX_PATH, _TEXT("Process name not retrievable"));
+		sprintf_s(nameA, MAX_PATH, "Process name not retrievable");
+		namesize = strnlen(nameA, MAX_PATH);
+		iconFileSize = 0;
+		CloseHandle(hproc);
+		return;
 	}
 	//we retrieve the icon
 	retrieveIcon();
