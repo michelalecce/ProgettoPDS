@@ -16,3 +16,4 @@
 void Lsendn(SOCKET , char*, int, int);
 void Isendn(SOCKET, char*, int, int);
 void Fsendn(SOCKET, char*, int, int);
+void Readn(SOCKET, char*, int, int);

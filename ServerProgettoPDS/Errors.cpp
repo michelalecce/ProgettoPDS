@@ -6,7 +6,6 @@
 class WindowInfoException: public std::runtime_error {
 private:
 	DWORD error;
-	HANDLE hproc;
 public:
 	WindowInfoException(DWORD err, std::string msg): std::runtime_error(msg), error(err){}
 	DWORD getErr(void){ return error; }
@@ -33,5 +32,21 @@ private:
 	DWORD error;
 public:
 	FocusSendException(DWORD err, std::string msg) :std::runtime_error(msg), error(err) {}
+	DWORD getErr(void) { return error; }
+};
+
+class ReadException : public std::runtime_error {
+private:
+	DWORD error;
+public:
+	ReadException(DWORD err, std::string msg) :std::runtime_error(msg), error(err) {}
+	DWORD getErr(void) { return error; }
+};
+
+class CommandException : public std::runtime_error {
+private:
+	DWORD error;
+public:
+	CommandException(DWORD err, std::string msg) : std::runtime_error(msg), error(err) {}
 	DWORD getErr(void) { return error; }
 };

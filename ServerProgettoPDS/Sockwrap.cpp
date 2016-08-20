@@ -22,6 +22,30 @@ int sendn(SOCKET s, char * buffer, int len, int flags)
 	return len;
 }
 
+int readn(int fd, char *vptr, int n,int flags)
+{
+	int nleft;
+	int nread;
+	char *ptr;
+
+	ptr = vptr;
+	nleft = n;
+	while (nleft > 0)
+	{
+		if ((nread = recv(fd, ptr, nleft,0)) ==SOCKET_ERROR)
+		{
+			return -1;
+		}
+		else
+			if (nread == 0)
+				break; /* EOF */
+
+		nleft -= nread;
+		ptr += nread;
+	}
+	return n - nleft;
+}
+
 void Lsendn(SOCKET s, char * buffer, int len, int flags){
 	if (sendn(s, buffer, len, flags) != len)
 		throw ListException(WSAGetLastError(), "Error while sending info through the socket");
@@ -38,4 +62,14 @@ void Fsendn(SOCKET s, char * buffer, int len, int flags)
 {
 	if (sendn(s, buffer, len, flags) != len)
 		throw FocusSendException(WSAGetLastError(), "Error while sending focus through the socket");
+}
+
+void Readn(SOCKET s, char * buffer, int len, int flags){
+	int res= readn(s,buffer, len, flags);
+	if (res < 0){
+		throw ReadException(WSAGetLastError(), "Error while reading from the socket");
+	}
+	else if (res!= flags){
+		throw ReadException(0, "Client closed connection");
+	}
 }

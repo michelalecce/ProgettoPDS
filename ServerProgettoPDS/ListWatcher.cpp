@@ -21,7 +21,13 @@ void ListWatcher::sendUpdate(SOCKET sock)
 			ai->deleteIcon();
 			ptr = ((char *)buffer + n);
 			pushHandle(ptr, ai->getWindow()); n += sizeof(uint64_t);
-			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow() << std::endl;
+			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow();
+
+			ptr = ((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
+			strcpy_s(buffer + n, BUFF - n, ai->getNameA());
+			n += ai->getNameSize() * sizeof(char);
+			//_tprintf(_TEXT("name: %s"), ai->getName());
+			printf(" nameA:%s size:%d iconsize:%d\n", ai->getNameA(), ai->getNameSize(), ai->getIconFileSize());
 			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
@@ -118,6 +124,78 @@ BOOL ListWatcher::checkApp(HWND wnd, LPARAM param)
 	}
 }
 
+bool ListWatcher::newFocusGood(HWND newfocus){
+	DWORD focuspid;
+	if (newfocus==NULL)
+		return false;
+	GetWindowThreadProcessId(newfocus, &focuspid);
+	std::pair<HWND, DWORD> pair(newfocus, focuspid);
+	auto iter = applist.find(pair);
+	return iter != applist.end();
+}
+
+void ListWatcher::sendCommand(SOCKET sock)
+{
+	char buffer[BUFF], vmodifier[MODMAX][COMMSIZE +1]= {"ALT","SHI","CTR"}, key;
+	bool presentmod[MODMAX]= {false, false, false};
+	BYTE virtualkeys[MODMAX] = {VK_MENU ,VK_SHIFT, VK_CONTROL }; //
+	uint64_t clientfoc, serverfocus;
+	uint32_t nmod;
+	int i,j;
+	LPARAM messagelparam;DWORD scan;
+	//I bring the handle to the focused application on 64 bit
+	if (sizeof(focus) == 4) {
+		serverfocus = (uint32_t)focus;
+	}
+	else if (sizeof(focus) == 8) {
+		serverfocus = (uint64_t)focus;
+	}
+	Readn(sock, buffer, sizeof(uint64_t), 0);
+	clientfoc= *((uint64_t *) buffer);
+	//After reading the handle of the application that the client considers ad the one with the focus, I check it with the current value of focus
+	if (clientfoc != serverfocus){
+		//the focus has changed
+		std::cout<< "Error receiving command from client: wrong focused application handle"<< std::endl;
+		sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMSIZE, 0);
+		sendFocus(sock);
+		return;
+	}
+	Readn(sock, buffer, sizeof(uint32_t), 0);
+	nmod = *((uint64_t *)buffer); // I read the number of modificators
+	Readn(sock, buffer, nmod*3 + 1 , 0);
+	//We read 3 byte for each modificator, plus 1 B for the key sent
+	for(i=0; i<nmod; i++){
+		for(j=0;j<0; j<MODMAX){
+			if(strncmp(vmodifier[j], buffer + i*COMMSIZE,COMMSIZE)==0){
+				//if a modifier is recognized I set the corrispondent flag
+				presentmod[j]= true;
+			}
+		}
+	}
+	key = buffer[nmod*COMMSIZE];
+
+	// I send the message to the app
+	messagelparam = 0x00000001; //we prepare the lparam to pass to SendMessage, bits from 16 to 23 will be set for every key before the call of the function
+	for (i=0;i<MODMAX; i++){
+		if(presentmod[i]){
+			if(!SendMessage(focus, WM_KEYDOWN, virtualkeys[i], messagelparam))
+				throw CommandException(0, "Error while performig SendMessage");
+		}
+	}
+	if(!SendMessage(focus, WM_KEYDOWN, key, messagelparam))
+		throw CommandException(0, "Error while performig SendMessage");
+	messagelparam = 0xC0000001;
+	for (i = 0;i<MODMAX; i++) {
+		if (presentmod[i]) {
+			if(!SendMessage(focus, WM_KEYUP, virtualkeys[i], messagelparam))
+				throw CommandException(0, "Error while performig SendMessage");
+		}
+	}
+	if(!SendMessage(focus, WM_KEYUP, key, messagelparam))
+		throw CommandException(0, "Error while performig SendMessage");
+	
+}
+
 void ListWatcher::updateList(SOCKET sock)
 {
 	static int consecutive_errors=10;
@@ -152,7 +230,7 @@ void ListWatcher::updateList(SOCKET sock)
 	}
 	//we take the new focused windows and update
 	newFocus = GetForegroundWindow();
-	if (newFocus != NULL && newFocus != focus){
+	if (newFocusGood(newFocus) && newFocus!=focus){
 		focus=newFocus;
 		sendFocus(sock);
 	}
@@ -199,15 +277,11 @@ void ListWatcher::sendList(SOCKET sock) {
 	}
 
 	//send focus for the first time
-	sprintf_s(buffer, BUFF, "foc");
-	n = COMMSIZE * sizeof(char);
-	pushHandle(buffer + n, focus); n += sizeof(uint64_t);
-	Lsendn(sock, (char *)buffer, n, 0);
-	std::cout <<"Focus:" << focus << std::endl;
+	sendFocus(sock);
 }
 
 
-unsigned long long htonll(unsigned long long src) { // HTONL 64 BIT VERSION
+unsigned long long hton64(unsigned long long src) { // HTONL 64 BIT VERSION
 	static int typ = TYP_INIT;
 	unsigned char c;
 	union {
@@ -237,16 +311,25 @@ void pushHandle(char * buffer, HWND h){
 	else if (sizeof(h) == 8) {
 		longnum = (uint64_t)h;
 	}
-	*((uint64_t *)buffer) = htonll(longnum);
+	*((uint64_t *)buffer) = hton64(longnum);
 }
 
 void ListWatcher::sendFocus(SOCKET sock){
-	char buffer[BUFF];
+	char buffer[BUFF], *ptr;
 	uint64_t longnum;
+	DWORD focuspid; 
+	GetWindowThreadProcessId(focus, &focuspid);
+	std::pair<HWND, DWORD> pair(focus, focuspid);
+	auto iter= applist.find(pair);
 	sprintf_s(buffer, BUFF, "foc");
 	int n = COMMSIZE * sizeof(char);
-	pushHandle(buffer + n, focus); n+= sizeof(uint64_t);
-	std::cout << "Focus:" << focus << std::endl;
+	ptr = buffer + n; pushHandle(ptr, focus); n+= sizeof(uint64_t);
+	std::cout << "Focus: handle: " << focus << " pid: " << focuspid << std::endl; 
+	ptr = ((char *)buffer + n);	*((DWORD *)ptr) = htonl(iter->second.getNameSize()); n += sizeof(DWORD);
+	strcpy_s(buffer + n, BUFF - n, iter->second.getNameA());
+	n += iter->second.getNameSize() * sizeof(char);
+	//_tprintf(_TEXT("name: %s"), ai->getName());
+	//printf(" nameA:%s size:%d iconsize:%d\n", iter->second.getNameA(), iter->second.getNameSize(), iter->second.getIconFileSize());
 	Fsendn(sock, buffer, n, 0);
 }
 

@@ -10,6 +10,10 @@
 
 #define MAXREQUESTS 10
 #define ERRBUFF 80
+#define COMMANDSIZE 3
+#define TYP_INIT 0
+#define TYP_SMLE 1
+#define TYP_BIGE 2
 
 ListWatcher lw;
 void sendList(SOCKET);
@@ -77,6 +81,7 @@ int main(int argc, char** argv)
 			lw.init();
 			lw.sendList(conn_sock);
 			//after sending the situation at the moment of the connection we start the polling
+			tval.tv_sec = 0; tval.tv_usec = 200;
 			while(1){
 				FD_ZERO(&readset); FD_SET(conn_sock, &readset);
 				sel_res = select(0, &readset, nullptr, nullptr, &tval);
@@ -109,6 +114,14 @@ int main(int argc, char** argv)
 			lw.clearList();
 		}
 		catch (WindowInfoException e) {
+			//we have only the socket to release at this moment
+			std::cout << e.what() << "\nerrno = " << e.getErr() << "\t";
+			strerror_s(errbuf, ERRBUFF, e.getErr());
+			printf("%s\n", errbuf);
+			closesocket(conn_sock);
+			lw.clearList();
+		}
+		catch (ReadException e) {
 			//we have only the socket to release at this moment
 			std::cout << e.what() << "\nerrno = " << e.getErr() << "\t";
 			strerror_s(errbuf, ERRBUFF, e.getErr());
@@ -166,5 +179,54 @@ BOOL CALLBACK updateProc(HWND wnd, LPARAM param) {
 	return lw.checkApp(wnd, param);
 }
 
-void readAndSendCommand(SOCKET sock){
+static unsigned long long ntoh64(unsigned long long src) {
+	static int typ = TYP_INIT;
+	unsigned char c;
+	union {
+		unsigned long long ull;
+		unsigned char c[8];
+	} x;
+
+	if (typ == TYP_INIT) {
+		x.ull = 0x01;
+		typ = (x.c[7] == 0x01) ? TYP_BIGE : TYP_SMLE;
+	}
+
+	if (typ == TYP_BIGE)
+		return src;
+
+	x.ull = src;
+	c = x.c[0]; x.c[0] = x.c[7]; x.c[7] = c;
+	c = x.c[1]; x.c[1] = x.c[6]; x.c[6] = c;
+	c = x.c[2]; x.c[2] = x.c[5]; x.c[5] = c;
+	c = x.c[3]; x.c[3] = x.c[4]; x.c[4] = c;
+	return x.ull;
+}
+
+void readAndSendCommand(SOCKET sock) {
+	char buffer[COMMANDSIZE];
+	char errbuf[ERRBUFF];
+	uint64_t clientfoc;
+	Readn(sock, buffer, COMMANDSIZE, 0);
+	if (strncmp(buffer, "clo", COMMANDSIZE)==0){
+		throw ReadException(0, "Client required connection closure");
+	}
+	else if(strncmp(buffer, "err", COMMANDSIZE)==0){
+		lw.sendFocus(sock);
+	}
+	else if(strncmp(buffer, "com", COMMANDSIZE) == 0){
+		try{
+			lw.sendCommand(sock);
+		}
+		catch(CommandException e){
+			sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMANDSIZE, 0);
+			std::cout << e.what() << "\nerrno = " << e.getErr() << "\t";
+			strerror_s(errbuf, ERRBUFF, e.getErr());
+			printf("%s\n", errbuf);
+		}
+	}
+	else{
+		sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMANDSIZE, 0);
+	}
+
 }

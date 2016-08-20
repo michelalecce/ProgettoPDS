@@ -1,3 +1,9 @@
-﻿  Sockwrap.cpp
+﻿  ListWatcher.cpp
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(164): warning C4244: '=': conversione da 'uint64_t' a 'uint32_t'. Possibile perdita di dati.
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(167): warning C4018: '<': errata corrispondenza tra signed e unsigned
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(168): warning C4552: '<': l'operatore non ha effetto. Previsto operatore con effetto collaterale.
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(145): warning C4101: 'scan': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(319): warning C4101: 'longnum': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(339): warning C4101: 'ptr': variabile locale senza riferimenti
   ServerProgettoPDS.vcxproj -> C:\Users\totox\Desktop\ProgettoPDS\ServerProgettoPDS\Debug\ServerProgettoPDS.exe
   ServerProgettoPDS.vcxproj -> C:\Users\totox\Desktop\ProgettoPDS\ServerProgettoPDS\Debug\ServerProgettoPDS.pdb (Full PDB)

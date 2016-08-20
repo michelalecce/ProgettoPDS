@@ -7,13 +7,15 @@
 
 #define ICONBUFF 65536
 #define BUFF 4096
-#define COMMSIZE 3
+#define COMMSIZE 3 //size of message type sent through the socket
+#define MODMAX 3 //maximum number of modifiers present in a keyboard combination
 
 extern BOOL CALLBACK enumProc(HWND wnd, LPARAM param);
 extern BOOL CALLBACK updateProc(HWND wnd, LPARAM param);
 extern void Lsendn(SOCKET, char*, int, int);
 extern void Isendn(SOCKET, char*, int, int);
 extern void Fsendn(SOCKET, char*, int ,int);
+extern void Readn(SOCKET, char*, int , int);
 
 class ListWatcher {
 private:
@@ -24,12 +26,14 @@ private:
 	std::list<AppInfo> addList;
 	std::list<AppInfo> removeList;
 	void sendUpdate(SOCKET);
+	bool newFocusGood(HWND newfocus);
 public:
 	ListWatcher ();
 	void init();
 	std::list<AppInfo> getList();
 	BOOL addApp(HWND wnd, LPARAM param);
 	BOOL checkApp(HWND wnd, LPARAM param);
+	void sendCommand(SOCKET);
 	void updateList(SOCKET);
 	void clearList();
 	void sendList(SOCKET);
