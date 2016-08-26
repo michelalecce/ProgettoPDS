@@ -69,7 +69,7 @@ void Readn(SOCKET s, char * buffer, int len, int flags){
 	if (res < 0){
 		throw ReadException(WSAGetLastError(), "Error while reading from the socket");
 	}
-	else if (res!= flags){
+	else if (res!= len){
 		throw ReadException(0, "Client closed connection");
 	}
 }

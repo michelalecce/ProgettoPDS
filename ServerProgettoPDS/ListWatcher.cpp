@@ -134,6 +134,30 @@ bool ListWatcher::newFocusGood(HWND newfocus){
 	return iter != applist.end();
 }
 
+static unsigned long long ntoh64(unsigned long long src) {
+	static int typ = TYP_INIT;
+	unsigned char c;
+	union {
+		unsigned long long ull;
+		unsigned char c[8];
+	} x;
+
+	if (typ == TYP_INIT) {
+		x.ull = 0x01;
+		typ = (x.c[7] == 0x01) ? TYP_BIGE : TYP_SMLE;
+	}
+
+	if (typ == TYP_BIGE)
+		return src;
+
+	x.ull = src;
+	c = x.c[0]; x.c[0] = x.c[7]; x.c[7] = c;
+	c = x.c[1]; x.c[1] = x.c[6]; x.c[6] = c;
+	c = x.c[2]; x.c[2] = x.c[5]; x.c[5] = c;
+	c = x.c[3]; x.c[3] = x.c[4]; x.c[4] = c;
+	return x.ull;
+}
+
 void ListWatcher::sendCommand(SOCKET sock)
 {
 	char buffer[BUFF], vmodifier[MODMAX][COMMSIZE +1]= {"ALT","SHI","CTR"}, key;
@@ -151,7 +175,7 @@ void ListWatcher::sendCommand(SOCKET sock)
 		serverfocus = (uint64_t)focus;
 	}
 	Readn(sock, buffer, sizeof(uint64_t), 0);
-	clientfoc= *((uint64_t *) buffer);
+	clientfoc= ntoh64(*((uint64_t *) buffer));
 	//After reading the handle of the application that the client considers ad the one with the focus, I check it with the current value of focus
 	if (clientfoc != serverfocus){
 		//the focus has changed
@@ -335,7 +359,7 @@ void ListWatcher::sendFocus(SOCKET sock){
 
 void sendIcon(SOCKET sock, TCHAR *file, LONG size)
 {
-	char buffer[BUFF];
+	char buffer[ICONBUFF];
 	void *ptr;
 	int n=0;
 	if(size==0){
