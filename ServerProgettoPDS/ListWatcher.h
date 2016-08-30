@@ -1,8 +1,8 @@
 #pragma once
+#include "windows.h"
 #include <list>
 #include <map>
 #include "AppInfo.h"
-#include <windows.h>
 #include "Errors.cpp"
 
 #define ICONBUFF 65536

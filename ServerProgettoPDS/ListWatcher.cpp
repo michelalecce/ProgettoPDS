@@ -162,10 +162,11 @@ void ListWatcher::sendCommand(SOCKET sock)
 {
 	char buffer[BUFF], vmodifier[MODMAX][COMMSIZE +1]= {"ALT","SHI","CTR"}, key;
 	bool presentmod[MODMAX]= {false, false, false};
-	BYTE virtualkeys[MODMAX] = {VK_MENU ,VK_SHIFT, VK_CONTROL }; //
+	BYTE virtualkeys[MODMAX] = {VK_MENU ,VK_SHIFT, VK_CONTROL }; //codes of the keys to send
+	INPUT vsend[MODMAX + 1], current; // vsend is the vector of input struct to send
 	uint64_t clientfoc, serverfocus;
 	uint32_t nmod;
-	int i,j;
+	unsigned int i,j, n=0;
 	LPARAM messagelparam;DWORD scan;
 	//I bring the handle to the focused application on 64 bit
 	if (sizeof(focus) == 4) {
@@ -185,11 +186,11 @@ void ListWatcher::sendCommand(SOCKET sock)
 		return;
 	}
 	Readn(sock, buffer, sizeof(uint32_t), 0);
-	nmod = *((uint64_t *)buffer); // I read the number of modificators
+	nmod = ntohl(*((uint32_t *)buffer)); // I read the number of modificators
 	Readn(sock, buffer, nmod*3 + 1 , 0);
 	//We read 3 byte for each modificator, plus 1 B for the key sent
 	for(i=0; i<nmod; i++){
-		for(j=0;j<0; j<MODMAX){
+		for(j=0;j<MODMAX; j++){
 			if(strncmp(vmodifier[j], buffer + i*COMMSIZE,COMMSIZE)==0){
 				//if a modifier is recognized I set the corrispondent flag
 				presentmod[j]= true;
@@ -198,26 +199,34 @@ void ListWatcher::sendCommand(SOCKET sock)
 	}
 	key = buffer[nmod*COMMSIZE];
 
-	// I send the message to the app
-	messagelparam = 0x00000001; //we prepare the lparam to pass to SendMessage, bits from 16 to 23 will be set for every key before the call of the function
-	for (i=0;i<MODMAX; i++){
+	// I send the message to the app after preparing the input vector
+	current.type = INPUT_KEYBOARD;
+	current.ki.time = 0;
+	current.ki.dwExtraInfo = NULL;
+	current.ki.dwFlags =0;
+	for (i=0, n=0;i<MODMAX; i++){
 		if(presentmod[i]){
-			if(!SendMessage(focus, WM_KEYDOWN, virtualkeys[i], messagelparam))
-				throw CommandException(0, "Error while performig SendMessage");
+			current.ki.wVk = virtualkeys[i];
+			vsend[n] = current;
+			n++;
 		}
 	}
-	if(!SendMessage(focus, WM_KEYDOWN, key, messagelparam))
-		throw CommandException(0, "Error while performig SendMessage");
-	messagelparam = 0xC0000001;
-	for (i = 0;i<MODMAX; i++) {
-		if (presentmod[i]) {
-			if(!SendMessage(focus, WM_KEYUP, virtualkeys[i], messagelparam))
-				throw CommandException(0, "Error while performig SendMessage");
-		}
+	current.ki.wVk = key;
+	vsend[n] = current;
+	n++;
+	SendInput(n, vsend , sizeof(INPUT));
+
+	for(i=0;i<n;i++){
+		vsend[i].ki.dwFlags= KEYEVENTF_KEYUP;
 	}
-	if(!SendMessage(focus, WM_KEYUP, key, messagelparam))
-		throw CommandException(0, "Error while performig SendMessage");
-	
+	SendInput(n, vsend, sizeof(INPUT));
+
+	std::cout << "Sent ";
+	for (j=0; j<MODMAX; j++){
+		if(presentmod[j])
+			printf("%s+", vmodifier[j]);
+	}
+	std::cout << key << " to: " << focus << std::endl;
 }
 
 void ListWatcher::updateList(SOCKET sock)

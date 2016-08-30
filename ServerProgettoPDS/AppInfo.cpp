@@ -3,9 +3,11 @@
 #include "Errors.cpp"
 #include "Psapi.h"
 #include <iostream>
+#include <fstream>
 #include "Shellapi.h"
 #include <olectl.h>
 #pragma comment(lib, "oleaut32.lib")
+#include "gdiplus.h"
 
 AppInfo::AppInfo(){
 	wnd=NULL;
@@ -22,7 +24,7 @@ AppInfo::AppInfo(HWND wnd):wnd(wnd){
 		_stprintf_s(name,MAX_PATH, _TEXT("Process name not retrievable"));
 		sprintf_s(nameA,MAX_PATH ,"Process name not retrievable");
 		namesize = strnlen(nameA, MAX_PATH);
-		iconFileSize=0;
+		iconFileSize = 0;
 		return;
 	}
 	namesize = GetModuleFileNameEx(hproc, NULL, name, MAX_PATH - 1); //retrieve the name of the process, we need the handle to do this
@@ -78,6 +80,8 @@ HWND AppInfo::getWindow()
 
 AppInfo::~AppInfo(){
 }
+
+/*
 // versione tutte presenti ma brutte
 void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	SHFILEINFO info;
@@ -133,57 +137,25 @@ void AppInfo::retrieveIcon(){ //taken principally from STACKOVERFLOW
 	pStream->Release();
 	pPicture->Release();
 }
-
-
-/*
-void AppInfo::retrieveIcon(){
-	// Create the IPicture intrface
-	HICON hIcon;
-	hIcon = (HICON)SendMessage(wnd, WM_GETICON, ICON_SMALL2, 640);
-	PICTDESC desc = { sizeof(PICTDESC) };
-	desc.picType = PICTYPE_ICON;
-	desc.icon.hicon = hIcon;
-	IPicture* pPicture = 0;
-	HRESULT hr = OleCreatePictureIndirect(&desc, IID_IPicture, FALSE, (void**)&pPicture);
-	if (FAILED(hr)) {
-		std::cout << "Error retrieving icon for pid:" << pid << "\t handle:" << wnd << std::endl;
-		iconFileSize = 0;
-		return;
-	}
-	// Create a stream and save the image
-	IStream* pStream = 0;
-	CreateStreamOnHGlobal(0, TRUE, &pStream);
-	LONG cbSize = 0;
-	hr = pPicture->SaveAsFile(pStream, TRUE, &cbSize);
-
-
-	if (FAILED(hr)) {
-		pPicture->Release();
-		std::cout << "Error retrieving icon for pid:" << pid << "\t handle:" << wnd << std::endl;
-		iconFileSize = 0;
-		return;
-	}
-	else {
-		// Write the stream content to the file
-		HGLOBAL hBuf = 0;
-		GetHGlobalFromStream(pStream, &hBuf);
-		void* buffer = GlobalLock(hBuf);
-		_stprintf_s(iconFile, MAX_PATH, TEXT("%x.ico"), wnd);
-		HANDLE hFile = CreateFile(iconFile, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-		if (!hFile) hr = HRESULT_FROM_WIN32(GetLastError());
-		else {
-			DWORD written = 0;
-			WriteFile(hFile, buffer, cbSize, &written, 0);
-			iconFileSize = cbSize;
-			CloseHandle(hFile);
-		}
-		GlobalUnlock(buffer);
-	}
-	// Cleanup
-	pStream->Release();
-	pPicture->Release();
-}
 */
+
+void AppInfo::retrieveIcon(){
+	SHFILEINFO info;
+	if (SHGetFileInfo(name, FILE_ATTRIBUTE_NORMAL, &info, sizeof(SHFILEINFO), SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX | SHGFI_ICON | SHGFI_LARGEICON) == 0) {
+		int err = GetLastError();
+		std::cout << "Error while retrieving info for icon errno= " << err << "\tpid:" << pid << "\t handle:" << wnd << std::endl;
+		char errbuf[ERRBUFF];
+		strerror_s(errbuf, ERRBUFF, err);
+		printf("%s\n", errbuf);
+		iconFileSize = 0;
+	}
+
+	_stprintf_s(iconFile, MAX_PATH, TEXT("%x.ico"), wnd);
+	if(!SaveIcon(info.hIcon ,iconFileSize, 32,iconFile)){
+		std::cout << "Error while saving icon for pid:" << pid << "\t handle:" << wnd << std::endl;
+		iconFileSize = 0;
+	}
+}
 
 void AppInfo::deleteIcon(){
 	DeleteFile(iconFile);

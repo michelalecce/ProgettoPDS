@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.h"
-#include <windows.h>
+#include "windows.h"
 #include <stdexcept>
 
 class WindowInfoException: public std::runtime_error {

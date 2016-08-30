@@ -129,6 +129,14 @@ int main(int argc, char** argv)
 			closesocket(conn_sock);
 			lw.clearList();
 		}
+		catch (FocusSendException e) {
+			//we have only the socket to release at this moment
+			std::cout << e.what() << "\nerrno = " << e.getErr() << "\t";
+			strerror_s(errbuf, ERRBUFF, e.getErr());
+			printf("%s\n", errbuf);
+			closesocket(conn_sock);
+			lw.clearList();
+		}
 	}
     return 0;
 }
@@ -180,7 +188,7 @@ BOOL CALLBACK updateProc(HWND wnd, LPARAM param) {
 }
 
 void readAndSendCommand(SOCKET sock) {
-	char buffer[COMMANDSIZE];
+	char buffer[COMMANDSIZE+1];
 	char errbuf[ERRBUFF];
 	uint64_t clientfoc;
 	Readn(sock, buffer, COMMANDSIZE, 0);

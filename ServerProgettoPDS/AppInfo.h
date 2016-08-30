@@ -1,10 +1,9 @@
 #pragma once
-
-#include <windows.h>
+#include "windows.h"
 #include <string>
 
 #define ERRBUFF 80
-
+extern bool SaveIcon(HICON hIcon,DWORD& szSize, int nColorBits, const TCHAR* szPath);
 class AppInfo{
 private:
 	TCHAR name[MAX_PATH];
@@ -12,7 +11,7 @@ private:
 	DWORD namesize;
 	HWND wnd;
 	DWORD pid;
-	LONG iconFileSize;
+	DWORD iconFileSize;
 	TCHAR iconFile[MAX_PATH];
 	bool still_open; //while updating the list it is true if it's found open again with a successive call of enumWindows
 public:
