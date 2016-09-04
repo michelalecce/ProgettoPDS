@@ -163,11 +163,16 @@ void ListWatcher::sendCommand(SOCKET sock)
 	char buffer[BUFF], vmodifier[MODMAX][COMMSIZE +1]= {"ALT","SHI","CTR"}, key;
 	bool presentmod[MODMAX]= {false, false, false};
 	BYTE virtualkeys[MODMAX] = {VK_MENU ,VK_SHIFT, VK_CONTROL }; //codes of the keys to send
+	HWND newFocus;
 	INPUT vsend[MODMAX + 1], current; // vsend is the vector of input struct to send
 	uint64_t clientfoc, serverfocus;
-	uint32_t nmod;
+	uint32_t nmod, nrecognisedmod=0;
 	unsigned int i,j, n=0;
 	LPARAM messagelparam;DWORD scan;
+	newFocus = GetForegroundWindow();
+	if (newFocus!=NULL && newFocus != focus){
+		focus = newFocus;
+	}
 	//I bring the handle to the focused application on 64 bit
 	if (sizeof(focus) == 4) {
 		serverfocus = (uint32_t)focus;
@@ -196,6 +201,15 @@ void ListWatcher::sendCommand(SOCKET sock)
 				presentmod[j]= true;
 			}
 		}
+	}
+	//I count the recognised modifiers to check if all the nmod modifiers declared by the client have been succesfully read
+	for(i=0;i<MODMAX;i++){
+		if(presentmod[i]==true)
+			nrecognisedmod++;
+	}
+	if(nmod != nrecognisedmod){
+		//we had errors while reading some modifiers
+		throw CommandException(0, "Error receiving command from client: wrong format");
 	}
 	key = buffer[nmod*COMMSIZE];
 
