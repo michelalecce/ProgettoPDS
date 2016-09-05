@@ -22,26 +22,45 @@ int sendn(SOCKET s, char * buffer, int len, int flags)
 	return len;
 }
 
-int readn(int fd, char *vptr, int n,int flags)
+int readn(SOCKET fd, char *vptr, int n,int flags)
 {
 	int nleft;
 	int nread;
 	char *ptr;
+	int sel_res;
+	fd_set readset;
+	struct timeval tval;
 
 	ptr = vptr;
 	nleft = n;
 	while (nleft > 0)
 	{
-		if ((nread = recv(fd, ptr, nleft,0)) ==SOCKET_ERROR)
-		{
-			return -1;
+		FD_ZERO(&readset); FD_SET(fd, &readset);
+		tval.tv_sec = 180; tval.tv_usec = 0;
+		sel_res = select(0, &readset, nullptr, nullptr, &tval);
+		/*I call another select in order to set a timeout for the socket, if the client sends only part of what we expect and after 3 mins we are still waiting 
+		for the rest we just close the connection. It is just a measure to make the server stronger against malicious clients that send less bytes than what we
+		expect to make the server stop*/
+		if (sel_res == SOCKET_ERROR){
+			throw ReadException(WSAGetLastError(), "Select in readn failed");
 		}
-		else
-			if (nread == 0)
-				break; /* EOF */
+		else if(sel_res==0){
+			//the timeout expired
+			throw ReadException(0, "Session Time out expired");
+		}
+		else{
+			//the socket has information
+			if ((nread = recv(fd, ptr, nleft, 0)) == SOCKET_ERROR)
+			{
+				return -1;
+			}
+			else
+				if (nread == 0)
+					break; /* EOF */
 
-		nleft -= nread;
-		ptr += nread;
+			nleft -= nread;
+			ptr += nread;
+		}
 	}
 	return n - nleft;
 }
