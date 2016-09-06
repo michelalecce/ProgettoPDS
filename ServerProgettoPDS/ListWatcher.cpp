@@ -170,7 +170,7 @@ void ListWatcher::sendCommand(SOCKET sock)
 	unsigned int i,j, n=0;
 	LPARAM messagelparam;DWORD scan;
 	newFocus = GetForegroundWindow();
-	if (newFocus!=NULL && newFocus != focus){
+	if (newFocusGood(newFocus) && newFocus != focus){
 		focus = newFocus;
 	}
 	//I bring the handle to the focused application on 64 bit
@@ -391,9 +391,10 @@ void sendIcon(SOCKET sock, TCHAR *file, LONG size)
 	}
 	else{
 		*((LONG *)buffer) = htonl(size); n= sizeof(LONG);
-		std::ifstream fin(file);
+		std::ifstream fin(file, std::ios::in | std::ios::binary);
 
 		fin.read((buffer + n), size); n+=size;
+		fin.close();
 		Isendn(sock,buffer,n,0);
 	}
 }
