@@ -186,6 +186,11 @@ void ListWatcher::sendCommand(SOCKET sock)
 	if (clientfoc != serverfocus){
 		//the focus has changed
 		std::cout<< "Error receiving command from client: wrong focused application handle"<< std::endl;
+		//In order to clean the socket I read the rest of what the client sent to me
+		Readn(sock, buffer, sizeof(uint32_t), 0);
+		nmod = ntohl(*((uint32_t *)buffer)); // I read the number of modificators
+		Readn(sock, buffer, nmod * 3 + 1, 0);
+
 		sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMSIZE, 0);
 		sendFocus(sock);
 		return;

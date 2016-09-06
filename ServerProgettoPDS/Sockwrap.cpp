@@ -36,7 +36,7 @@ int readn(SOCKET fd, char *vptr, int n,int flags)
 	while (nleft > 0)
 	{
 		FD_ZERO(&readset); FD_SET(fd, &readset);
-		tval.tv_sec = 180; tval.tv_usec = 0;
+		tval.tv_sec = 60; tval.tv_usec = 0;
 		sel_res = select(0, &readset, nullptr, nullptr, &tval);
 		/*I call another select in order to set a timeout for the socket, if the client sends only part of what we expect and after 3 mins we are still waiting 
 		for the rest we just close the connection. It is just a measure to make the server stronger against malicious clients that send less bytes than what we
