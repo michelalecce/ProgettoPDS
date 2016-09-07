@@ -11,28 +11,8 @@ void ListWatcher::sendUpdate(SOCKET sock)
 {
 	char buffer[BUFF];
 	char *ptr;
-	if(removeList.size()!=0){
-		//we send the communication for removed windows
-		sprintf_s(buffer, BUFF, "rem");
-		*((uint32_t *)(buffer + COMMSIZE)) = htonl(removeList.size());
-		int n = COMMSIZE * sizeof(char) + sizeof(uint32_t);
-		std::cout << "Removed application list: (n=" << removeList.size() << ")" << std::endl;
-		for (auto ai = removeList.begin(); ai != removeList.end(); ai++) {
-			ai->deleteIcon();
-			ptr = ((char *)buffer + n);
-			pushHandle(ptr, ai->getWindow()); n += sizeof(uint64_t);
-			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow();
-
-			ptr = ((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
-			strcpy_s(buffer + n, BUFF - n, ai->getNameA());
-			n += ai->getNameSize() * sizeof(char);
-			//_tprintf(_TEXT("name: %s"), ai->getName());
-			printf(" nameA:%s size:%d iconsize:%d\n", ai->getNameA(), ai->getNameSize(), ai->getIconFileSize());
-			Lsendn(sock, (char *)buffer, n, 0);
-			n = 0;
-		}
-	}
-	if (addList.size()!=0){
+	
+	if (addList.size() != 0) {
 		//we send the communication for added windows
 		sprintf_s(buffer, BUFF, "add");
 		*((uint32_t *)(buffer + COMMSIZE)) = htonl(addList.size());
@@ -56,6 +36,27 @@ void ListWatcher::sendUpdate(SOCKET sock)
 			catch (IconSendException e) {
 				throw ListException(e.getErr(), e.what());
 			}
+			n = 0;
+		}
+	}
+	if(removeList.size()!=0){
+		//we send the communication for removed windows
+		sprintf_s(buffer, BUFF, "rem");
+		*((uint32_t *)(buffer + COMMSIZE)) = htonl(removeList.size());
+		int n = COMMSIZE * sizeof(char) + sizeof(uint32_t);
+		std::cout << "Removed application list: (n=" << removeList.size() << ")" << std::endl;
+		for (auto ai = removeList.begin(); ai != removeList.end(); ai++) {
+			ai->deleteIcon();
+			ptr = ((char *)buffer + n);
+			pushHandle(ptr, ai->getWindow()); n += sizeof(uint64_t);
+			std::cout << "pid: " << ai->getPid() << " handle: " << ai->getWindow();
+
+			ptr = ((char *)buffer + n);	*((DWORD *)ptr) = htonl(ai->getNameSize()); n += sizeof(DWORD);
+			strcpy_s(buffer + n, BUFF - n, ai->getNameA());
+			n += ai->getNameSize() * sizeof(char);
+			//_tprintf(_TEXT("name: %s"), ai->getName());
+			printf(" nameA:%s size:%d iconsize:%d\n", ai->getNameA(), ai->getNameSize(), ai->getIconFileSize());
+			Lsendn(sock, (char *)buffer, n, 0);
 			n = 0;
 		}
 	}
@@ -263,6 +264,7 @@ void ListWatcher::updateList(SOCKET sock)
 		std::cout << "EnumWindows failed while updating\nerrno = " << err << "\t";
 		strerror_s(errbuf, ERRBUFF, err);
 		printf("%s\n", errbuf);
+		return;
 	}
 	//we fill in the list of windows to remove and removes them from the map
 	auto elim_iter = applist.begin();
@@ -298,6 +300,8 @@ void ListWatcher::clearList()
 {
 	for (auto ai = applist.begin(); ai != applist.end(); ai++) ai->second.deleteIcon(); //eliminates the iconfile for the apps in the list
 	applist.clear();
+	removeList.clear();
+	addList.clear();
 }
 
 void ListWatcher::sendList(SOCKET sock) {
@@ -373,6 +377,10 @@ void ListWatcher::sendFocus(SOCKET sock){
 	GetWindowThreadProcessId(focus, &focuspid);
 	std::pair<HWND, DWORD> pair(focus, focuspid);
 	auto iter= applist.find(pair);
+	if (iter == applist.end()){
+		std::cout << "Error sending the focuse application, the pair (handle, pid) is not present in the map" << std::endl;
+		return;
+	}
 	sprintf_s(buffer, BUFF, "foc");
 	int n = COMMSIZE * sizeof(char);
 	ptr = buffer + n; pushHandle(ptr, focus); n+= sizeof(uint64_t);

@@ -754,10 +754,10 @@ c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\serverpro
   Nota: file incluso   c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\Errors.cpp
   Nota: file incluso  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\iostream
   Nota: file incluso  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\fstream
-c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(171): warning C4101: 'messagelparam': variabile locale senza riferimenti
-c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(171): warning C4101: 'scan': variabile locale senza riferimenti
-c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(371): warning C4101: 'longnum': variabile locale senza riferimenti
-c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(391): warning C4101: 'ptr': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(172): warning C4101: 'messagelparam': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(172): warning C4101: 'scan': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(375): warning C4101: 'longnum': variabile locale senza riferimenti
+c:\users\totox\desktop\progettopds\serverprogettopds\serverprogettopds\listwatcher.cpp(399): warning C4101: 'ptr': variabile locale senza riferimenti
   IconApp.cpp
   Nota: file incluso  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\include\afx.h
   Nota: file incluso   C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt\new.h
