@@ -141,6 +141,39 @@ int main(int argc, char** argv)
     return 0;
 }
 
+/*BOOL IsAltTabWindow(HWND hwnd)
+{
+	TITLEBARINFO ti;
+	HWND hwndTry, hwndWalk = NULL;
+
+	if (!IsWindowVisible(hwnd))
+		return FALSE;
+
+	hwndTry = GetAncestor(hwnd, GA_ROOTOWNER);
+	while (hwndTry != hwndWalk)
+	{
+		hwndWalk = hwndTry;
+		hwndTry = GetLastActivePopup(hwndWalk);
+		if (IsWindowVisible(hwndTry))
+			break;
+	}
+	if (hwndWalk != hwnd)
+		return FALSE;
+
+	// the following removes some task tray programs and "Program Manager"
+	ti.cbSize = sizeof(ti);
+	GetTitleBarInfo(hwnd, &ti);
+	if (ti.rgstate[0] & STATE_SYSTEM_INVISIBLE)
+		return FALSE;
+
+	// Tool windows should not be displayed either, these do not appear in the
+	// task bar.
+	if (GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)
+		return FALSE;
+
+	return TRUE;
+}*/
+
 BOOL IsAltTabWindow(HWND hwnd)
 {
 	TITLEBARINFO ti;
@@ -166,6 +199,8 @@ BOOL IsAltTabWindow(HWND hwnd)
 	if (ti.rgstate[0] & STATE_SYSTEM_INVISIBLE)
 		return FALSE;
 
+	if (ti.rgstate[0] & STATE_SYSTEM_OFFSCREEN)
+		return FALSE;
 	// Tool windows should not be displayed either, these do not appear in the
 	// task bar.
 	if (GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)
@@ -201,6 +236,7 @@ void readAndSendCommand(SOCKET sock) {
 	else if(strncmp(buffer, "com", COMMANDSIZE) == 0){
 		try{
 			lw.sendCommand(sock);
+			sprintf_s(buffer, "+ok"); Lsendn(sock, buffer, COMMANDSIZE, 0);
 		}
 		catch(CommandException e){
 			sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMANDSIZE, 0);
