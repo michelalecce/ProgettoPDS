@@ -23,6 +23,7 @@ private:
 	//DWORD focus;
 	HWND focus;
 	HWND newFocus;
+	HWND desktopwnd;
 	std::list<AppInfo> addList;
 	std::list<AppInfo> removeList;
 	void sendUpdate(SOCKET);
@@ -33,7 +34,7 @@ public:
 	std::list<AppInfo> getList();
 	BOOL addApp(HWND wnd, LPARAM param);
 	BOOL checkApp(HWND wnd, LPARAM param);
-	void sendCommand(SOCKET);
+	bool sendCommand(SOCKET);
 	void updateList(SOCKET);
 	void clearList();
 	void sendList(SOCKET);

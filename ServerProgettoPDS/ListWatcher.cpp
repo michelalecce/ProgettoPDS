@@ -85,6 +85,8 @@ void ListWatcher::init()
 	}
 	//GetWindowThreadProcessId(wnd, &focus);
 	focus=wnd;
+	desktopwnd = GetDesktopWindow();
+	std::cout << "Desktop window: " << desktopwnd << std::endl;
 }
 
 BOOL ListWatcher::addApp(HWND wnd, LPARAM param)
@@ -127,8 +129,6 @@ BOOL ListWatcher::checkApp(HWND wnd, LPARAM param)
 
 bool ListWatcher::newFocusGood(HWND newfocus){
 	DWORD focuspid;
-	if (newfocus==NULL)
-		return false;
 	GetWindowThreadProcessId(newfocus, &focuspid);
 	std::pair<HWND, DWORD> pair(newfocus, focuspid);
 	auto iter = applist.find(pair);
@@ -159,7 +159,7 @@ static unsigned long long ntoh64(unsigned long long src) {
 	return x.ull;
 }
 
-void ListWatcher::sendCommand(SOCKET sock)
+bool ListWatcher::sendCommand(SOCKET sock)
 {
 	char buffer[BUFF], vmodifier[MODMAX][COMMSIZE +1]= {"ALT","SHI","CTR"}, key;
 	bool presentmod[MODMAX]= {false, false, false};
@@ -171,8 +171,11 @@ void ListWatcher::sendCommand(SOCKET sock)
 	unsigned int i,j, n=0;
 	LPARAM messagelparam;DWORD scan;
 	newFocus = GetForegroundWindow();
-	if (newFocusGood(newFocus) && newFocus != focus){
-		focus = newFocus;
+	if (newFocus!=NULL && newFocus != focus){
+		if (newFocusGood(newFocus))
+			focus = newFocus;
+		else
+			focus = NULL;
 	}
 	//I bring the handle to the focused application on 64 bit
 	if (sizeof(focus) == 4) {
@@ -184,9 +187,12 @@ void ListWatcher::sendCommand(SOCKET sock)
 	Readn(sock, buffer, sizeof(uint64_t), 0);
 	clientfoc= ntoh64(*((uint64_t *) buffer));
 	//After reading the handle of the application that the client considers ad the one with the focus, I check it with the current value of focus
-	if (clientfoc != serverfocus){
+	if (clientfoc != serverfocus || serverfocus==0){
 		//the focus has changed
-		std::cout<< "Error receiving command from client: wrong focused application handle"<< std::endl;
+		if(serverfocus==0)
+			std::cout << "Error receiving command from client: desktop focused" << std::endl;
+		else
+			std::cout<< "Error receiving command from client: wrong focused application handle"<< std::endl;
 		//In order to clean the socket I read the rest of what the client sent to me
 		Readn(sock, buffer, sizeof(uint32_t), 0);
 		nmod = ntohl(*((uint32_t *)buffer)); // I read the number of modificators
@@ -194,7 +200,7 @@ void ListWatcher::sendCommand(SOCKET sock)
 
 		sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMSIZE, 0);
 		sendFocus(sock);
-		return;
+		return false;
 	}
 	Readn(sock, buffer, sizeof(uint32_t), 0);
 	nmod = ntohl(*((uint32_t *)buffer)); // I read the number of modificators
@@ -247,6 +253,7 @@ void ListWatcher::sendCommand(SOCKET sock)
 			printf("%s+", vmodifier[j]);
 	}
 	std::cout << key << " to: " << focus << std::endl;
+	return true;
 }
 
 void ListWatcher::updateList(SOCKET sock)
@@ -284,9 +291,17 @@ void ListWatcher::updateList(SOCKET sock)
 	}
 	//we take the new focused windows and update
 	newFocus = GetForegroundWindow();
-	if (newFocusGood(newFocus) && newFocus!=focus){
-		focus=newFocus;
-		sendFocus(sock);
+	if (newFocus != NULL && newFocus != focus) {
+		if (newFocusGood(newFocus)) {
+			focus = newFocus;
+			sendFocus(sock);
+		}
+		else {
+			if (focus != NULL) {
+				focus = NULL;
+				sendFocus(sock);
+			}
+		}
 	}
 	//Now we get ready for the successive update
 	addList.clear();
@@ -373,12 +388,20 @@ void pushHandle(char * buffer, HWND h){
 void ListWatcher::sendFocus(SOCKET sock){
 	char buffer[BUFF], *ptr;
 	uint64_t longnum;
-	DWORD focuspid; 
+	DWORD focuspid;
+	if(focus==NULL){
+		sprintf_s(buffer, BUFF, "foc");
+		int n = COMMSIZE * sizeof(char);
+		ptr = buffer + n; pushHandle(ptr, (uint64_t) 0); n += sizeof(uint64_t);
+		std::cout << "Focus: DESKTOP"<< std::endl;
+		Fsendn(sock, buffer, n, 0);
+		return;
+	}
 	GetWindowThreadProcessId(focus, &focuspid);
 	std::pair<HWND, DWORD> pair(focus, focuspid);
-	auto iter= applist.find(pair);
+	auto iter = applist.find(pair);
 	if (iter == applist.end()){
-		std::cout << "Error sending the focuse application, the pair (handle, pid) is not present in the map" << std::endl;
+		std::cout << "Error sending the focused application, the pair (handle, pid) is not present in the map" << std::endl;
 		return;
 	}
 	sprintf_s(buffer, BUFF, "foc");

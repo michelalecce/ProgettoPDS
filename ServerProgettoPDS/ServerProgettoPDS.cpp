@@ -235,8 +235,8 @@ void readAndSendCommand(SOCKET sock) {
 	}
 	else if(strncmp(buffer, "com", COMMANDSIZE) == 0){
 		try{
-			lw.sendCommand(sock);
-			sprintf_s(buffer, "+ok"); Lsendn(sock, buffer, COMMANDSIZE, 0);
+			if(lw.sendCommand(sock))
+				sprintf_s(buffer, "+ok"); Lsendn(sock, buffer, COMMANDSIZE, 0);
 		}
 		catch(CommandException e){
 			sprintf_s(buffer, "err"); Lsendn(sock, buffer, COMMANDSIZE, 0);
